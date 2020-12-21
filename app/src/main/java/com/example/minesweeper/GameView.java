@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -15,8 +16,10 @@ import androidx.annotation.Nullable;
 public class GameView extends View {
     Rect field;
     Mine[][] mines = new Mine[10][10];
+    int mineCount = 0;
 
-    Paint covered, uncovered, flag;
+    TextPaint bombText;
+    Paint covered, uncovered, bomb, flag;
 
     public GameView(Context context) {
         super(context);
@@ -40,6 +43,11 @@ public class GameView extends View {
             }
         }
 
+        while(mineCount < 20) {
+            mineCount++;
+            mines[(int) (Math.random()*(10 - 1)) + 1][(int) (Math.random()*(10 - 1)) + 1].setBomb();
+        }
+
         covered = new Paint();
         covered.setStyle(Paint.Style.FILL);
         covered.setColor(Color.BLACK);
@@ -47,6 +55,14 @@ public class GameView extends View {
         uncovered = new Paint();
         uncovered.setStyle(Paint.Style.FILL);
         uncovered.setColor(Color.GRAY);
+
+        bomb = new Paint();
+        bomb.setStyle(Paint.Style.FILL);
+        bomb.setColor(Color.RED);
+
+        bombText = new TextPaint();
+        bombText.setColor(Color.BLACK);
+        bombText.setTextSize(50);
     }
 
     public boolean onTouchEvent(MotionEvent event) {
@@ -93,9 +109,15 @@ public class GameView extends View {
             for(int j = 0; j < 10; j++){
                 canvas.save();
                 canvas.translate( (i * fieldWidth), (j * fieldHeight));
-                if(mines[i][j].isUncovered){
+                if(mines[i][j].isUncovered && !mines[i][j].isBomb){
                     canvas.drawRect(field, uncovered);
                 }
+
+                else if(mines[i][j].isUncovered && mines[i][j].isBomb){
+                    canvas.drawRect(field, bomb);
+                    canvas.drawText("M", i+50,j+100, bombText);
+                }
+
                 else {
                     canvas.drawRect(field, covered);
                 }
