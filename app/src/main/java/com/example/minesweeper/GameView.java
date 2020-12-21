@@ -9,6 +9,7 @@ import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 
@@ -17,6 +18,10 @@ public class GameView extends View {
     Rect field;
     Mine[][] mines = new Mine[10][10];
     int mineCount = 0;
+    enum ClickMode {UNCOVER, FLAG}
+    ClickMode mode = ClickMode.UNCOVER;
+    int flagCount = 0;
+    boolean lost = false;
 
     TextPaint bombText;
     Paint covered, uncovered, bomb, flag;
@@ -63,30 +68,40 @@ public class GameView extends View {
         bombText = new TextPaint();
         bombText.setColor(Color.BLACK);
         bombText.setTextSize(50);
+
+        flag = new Paint();
+        flag.setStyle(Paint.Style.FILL);
+        flag.setColor(Color.YELLOW);
     }
 
     public boolean onTouchEvent(MotionEvent event) {
-        int col = 0;
-        int row = 0;
-        float x = event.getX();
-        float y = event.getY();
+        if(!lost) {
+            int col = 0;
+            int row = 0;
+            float x = event.getX();
+            float y = event.getY();
 
-        for(int i = 1; i <= 10; i++) {
-            if (x < (i * getWidth()/10)) {
-                col = i;
-                break;
+            for(int i = 1; i <= 10; i++) {
+                if (x < (i * getWidth()/10)) {
+                    col = i;
+                    break;
+                }
             }
+
+            for (int j = 1; j <= 10; j++) {
+                if (y < (j * getHeight()/10)) {
+                    row = j;
+                    break;
+                }
+            }
+
+            mines[col-1][row-1].setUncovered();
+            invalidate();
         }
 
-        for (int j = 1; j <= 10; j++) {
-            if (y < (j * getHeight()/10)) {
-                row = j;
-                break;
-            }
+        else {
+            return false;
         }
-
-        mines[col-1][row-1].setUncovered();
-        invalidate();
 
         return super.onTouchEvent(event);
     }
@@ -109,13 +124,128 @@ public class GameView extends View {
             for(int j = 0; j < 10; j++){
                 canvas.save();
                 canvas.translate( (i * fieldWidth), (j * fieldHeight));
-                if(mines[i][j].isUncovered && !mines[i][j].isBomb){
+                if(mines[i][j].isUncovered && mode == ClickMode.UNCOVER && !mines[i][j].isBomb && !mines[i][j].isFlag){
                     canvas.drawRect(field, uncovered);
+                    //couldn't get this to work without certain mines crashig the game
+                    /*int bombCount = 0;
+                    if(mines[i][j].getX() > 0 && mines[i][j].getX() < 10 && mines[i][j].getY() > 0 && mines[i][j].getY() < 10) {
+                        if(mines[i-1][j].isBomb) {
+                            bombCount++;
+                        }
+                        else if(mines[i-1][j-1].isBomb) {
+                            bombCount++;
+                        }
+                        else if(mines[i][j-1].isBomb) {
+                            bombCount++;
+                        }
+                        else if(mines[i+1][j].isBomb) {
+                            bombCount++;
+                        }
+                        else if(mines[i+1][j+1].isBomb) {
+                            bombCount++;
+                        }
+                        else if(mines[i][j+1].isBomb) {
+                            bombCount++;
+                        }
+                    }
+                    else if(mines[i][j].getX() == 0 && mines[i][j].getY() != 0 && mines[i][j].getY() != 10) {
+                        if(mines[i][j-1].isBomb) {
+                            bombCount++;
+                        }
+                        else if(mines[i+1][j].isBomb) {
+                            bombCount++;
+                        }
+                        else if(mines[i+1][j+1].isBomb) {
+                            bombCount++;
+                        }
+                        else if(mines[i][j+1].isBomb) {
+                            bombCount++;
+                        }
+                    }
+
+                    else if(mines[i][j].getY() == 0 && mines[i][j].getX() != 0 && mines[i][j].getX() != 10) {
+                        if(mines[i-1][j].isBomb) {
+                            bombCount++;
+                        }
+                        else if(mines[i+1][j].isBomb) {
+                            bombCount++;
+                        }
+                        else if(mines[i+1][j+1].isBomb) {
+                            bombCount++;
+                        }
+                        else if(mines[i][j+1].isBomb) {
+                            bombCount++;
+                        }
+                    }
+
+                    else if(mines[i][j].getX() == 10 && mines[i][j].getY() != 10 && mines[i][j].getY() != 0) {
+                        if(mines[i-1][j].isBomb) {
+                            bombCount++;
+                        }
+                        else if(mines[i-1][j-1].isBomb) {
+                            bombCount++;
+                        }
+                        else if(mines[i][j-1].isBomb) {
+                            bombCount++;
+                        }
+                        else if(mines[i][j+1].isBomb) {
+                            bombCount++;
+                        }
+                    }
+
+                    else if(mines[i][j].getY() == 10 && mines[i][j].getX() != 10 && mines[i][j].getX() != 0) {
+                        if(mines[i-1][j].isBomb) {
+                            bombCount++;
+                        }
+                        else if(mines[i-1][j-1].isBomb) {
+                            bombCount++;
+                        }
+                        else if(mines[i][j-1].isBomb) {
+                            bombCount++;
+                        }
+                        else if(mines[i+1][j].isBomb) {
+                            bombCount++;
+                        }
+                    }
+
+                    else if(mines[i][j].getX() == 0 && mines[i][j].getY() == 0) {
+                        if(mines[i+1][j].isBomb) {
+                            bombCount++;
+                        }
+                        else if(mines[i+1][j+1].isBomb) {
+                            bombCount++;
+                        }
+                        else if(mines[i][j+1].isBomb) {
+                            bombCount++;
+                        }
+                    }
+
+                    else if(mines[i][j].getX() == 10 && mines[i][j].getY() == 10) {
+                        if(mines[i-1][j].isBomb) {
+                            bombCount++;
+                        }
+                        else if(mines[i-1][j-1].isBomb) {
+                            bombCount++;
+                        }
+                        else if(mines[i][j-1].isBomb) {
+                            bombCount++;
+                        }
+                    }
+
+                    canvas.drawText(Integer.toString(bombCount), i+50,j+100, bombText);*/
+                }
+
+                else if(mines[i][j].isUncovered && mode == ClickMode.FLAG && !mines[i][j].isBomb){
+                    canvas.drawRect(field, flag);
+                    mines[i][j].setFlag();
+                    flagCount++;
                 }
 
                 else if(mines[i][j].isUncovered && mines[i][j].isBomb){
                     canvas.drawRect(field, bomb);
                     canvas.drawText("M", i+50,j+100, bombText);
+                    lost = true;
+                    Toast.makeText(getContext(), "YOU LOST!", Toast.LENGTH_SHORT).show();
                 }
 
                 else {

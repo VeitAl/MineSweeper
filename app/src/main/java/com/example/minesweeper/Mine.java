@@ -5,6 +5,7 @@ public class Mine {
     int y;
     boolean isUncovered = false;
     boolean isBomb = false;
+    boolean isFlag = false;
 
     public Mine(int x, int y) {
         this.x = x;
@@ -17,5 +18,20 @@ public class Mine {
 
     public void setBomb() {
         isBomb = true;
+    }
+
+    public void setFlag() {
+        if(isFlag) {
+            isFlag = false;
+        }
+        isFlag = true;
+    }
+
+    public int getX() {
+        return x;
+    }
+
+    public int getY() {
+        return y;
     }
 }
